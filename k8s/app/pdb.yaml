@@ -1,0 +1,11 @@
+# PodDisruptionBudget ensures we maintain availability during rolling updates 🚀
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: tikky-api-pdb
+  namespace: tikky-app
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tikky-api

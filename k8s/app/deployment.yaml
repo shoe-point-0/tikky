@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tikky-api
+  namespace: tikky-app
+  labels:
+    app.kubernetes.io/name: tikky-api
+    app.kubernetes.io/component: api-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tikky-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tikky-api
+        app.kubernetes.io/component: api-server
+    spec:
+      containers:
+      - name: tikky-api
+        # IMPORTANT: Replace this with the actual image path after building and pushing
+        image: tikky:latest
+        imagePullPolicy: Never # Use 'Never' for Docker Desktop to force use of local image cache
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: REDIS_ADDR
+          value: "redis-service:6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: REDIS_PASSWORD
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+        livenessProbe:
+          httpGet:
+            path: /read # Using the read endpoint as a basic health check
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /read
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10

@@ -1,0 +1,56 @@
+# 1. Default deny all ingress traffic in the namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: tikky-app
+spec:
+  podSelector: {} # Select all pods in the namespace
+  policyTypes:
+  - Ingress
+---
+# 2. Allow Ingress controller traffic to the API server
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-api
+  namespace: tikky-app
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: tikky-api
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    # Allow traffic from NGINX Ingress controller in ingress-nginx namespace
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8080
+---
+# 3. Allow traffic from the API server to Redis
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-to-redis
+  namespace: tikky-app
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: tikky-api
+    ports:
+    - protocol: TCP
+      port: 6379
